@@ -65,6 +65,7 @@
     pageMode = Number(event.target.value);
     render();
   }
+
   function initPageMode() {
     const input = document.querySelector("#page-mode input");
     input.setAttribute("max", totalPagesCount);
@@ -114,10 +115,7 @@
   }
 
   var PdfCanvas;
-  let updatedCoordinatesProportion = false;
-  let currentPage;
   function renderPage(page) {
-    currentPage = page;
     let pdfViewport = page.getViewport(1);
     const container =
       viewport.children[page.pageIndex - cursorIndex * pageMode];
@@ -127,13 +125,7 @@
     canvas.height = pdfViewport.height;
     canvas.width = pdfViewport.width;
     PdfCanvas = canvas;
-    if (!updatedCoordinatesProportion) {
-      changeCoordinatesProportions(canvas, renderButtonsOrSignatures);
-
-      updatedCoordinatesProportion = true;
-    } else {
-      renderButtonsOrSignatures();
-    }
+    changeCoordinatesProportions(page, canvas, renderButtonsOrSignatures);
 
     page.render({
       canvasContext: context,
@@ -141,9 +133,88 @@
     });
   }
 
-  function renderButtonsOrSignatures() {
-    console.log(arrayFirmasCanvas);
-    const page = currentPage;
+  function changeCoordinatesProportions(page, canvas, callback) {
+    const filterSignaturesForPage = arrayFirmasCanvas.filter((firma) => {
+      return page.pageIndex + 1 === Number(firma.numeroPagina);
+    });
+    console.log(canvas.width, canvas.height, page.view[2], page.view[3]);
+    for (var i = 0; i < filterSignaturesForPage.length; i++) {
+      if (!filterSignaturesForPage[i].resized) {
+        console.log("antes:" + filterSignaturesForPage[i].coordenadax1);
+        filterSignaturesForPage[i].coordenadax1 = resizedPoint(
+          filterSignaturesForPage[i].coordenadax1,
+          "X",
+          canvas.width,
+          canvas.height,
+          page.view[2],
+          page.view[3]
+        );
+        console.log("despues:" + filterSignaturesForPage[i].coordenadax1);
+        console.log("--------------------------------");
+        filterSignaturesForPage[i].coordenadax2 = resizedPoint(
+          filterSignaturesForPage[i].coordenadax2,
+          "X",
+          canvas.width,
+          canvas.height,
+          page.view[2],
+          page.view[3]
+        );
+        filterSignaturesForPage[i].coordenaday1 = resizedPoint(
+          filterSignaturesForPage[i].coordenaday1,
+          "Y",
+          canvas.width,
+          canvas.height,
+          page.view[2],
+          page.view[3]
+        );
+        filterSignaturesForPage[i].coordenaday2 = resizedPoint(
+          filterSignaturesForPage[i].coordenaday2,
+          "Y",
+          canvas.width,
+          canvas.height,
+          page.view[2],
+          page.view[3]
+        );
+        filterSignaturesForPage[i].coordenada_x1 = resizedPoint(
+          filterSignaturesForPage[i].coordenada_x1,
+          "X",
+          canvas.width,
+          canvas.height,
+          page.view[2],
+          page.view[3]
+        );
+        filterSignaturesForPage[i].coordenada_x2 = resizedPoint(
+          filterSignaturesForPage[i].coordenada_x2,
+          "X",
+          canvas.width,
+          canvas.height,
+          page.view[2],
+          page.view[3]
+        );
+        filterSignaturesForPage[i].coordenada_y1 = resizedPoint(
+          filterSignaturesForPage[i].coordenada_y1,
+          "Y",
+          canvas.width,
+          canvas.height,
+          page.view[2],
+          page.view[3]
+        );
+        filterSignaturesForPage[i].coordenada_y2 = resizedPoint(
+          filterSignaturesForPage[i].coordenada_y2,
+          "Y",
+          canvas.width,
+          canvas.height,
+          page.view[2],
+          page.view[3]
+        );
+        filterSignaturesForPage[i].resized = true;
+      }
+    }
+
+    callback(page);
+  }
+
+  function renderButtonsOrSignatures(page) {
     const filterSignaturesForPage = arrayFirmasCanvas.filter((firma) => {
       return page.pageIndex + 1 === Number(firma.numeroPagina);
     });
@@ -165,93 +236,6 @@
         showModal(span.dataset.id);
       });
     });
-  }
-
-  function changeCoordinatesProportions(canvas, callback) {
-    const renderFunction = callback;
-    for (var i = 0; i < pdfInstance.numPages; i++) {
-      pdfInstance.getPage(i + 1).then((page) => {
-        arrayFirmasCanvas.forEach((firma) => {
-          if (page.pageIndex + 1 === Number(firma.numeroPagina)) {
-            console.log(
-              canvas.width,
-              canvas.height,
-              page.view[2],
-              page.view[3]
-            );
-            console.log(firma.coordenadax1);
-            firma.coordenadax1 = resizedPoint(
-              firma.coordenadax1,
-              "X",
-              canvas.width,
-              canvas.height,
-              page.view[2],
-              page.view[3]
-            );
-            console.log(firma.coordenadax1);
-            firma.coordenadax2 = resizedPoint(
-              firma.coordenadax2,
-              "X",
-              canvas.width,
-              canvas.height,
-              page.view[2],
-              page.view[3]
-            );
-            firma.coordenaday1 = resizedPoint(
-              firma.coordenaday1,
-              "Y",
-              canvas.width,
-              canvas.height,
-              page.view[2],
-              page.view[3]
-            );
-            firma.coordenaday2 = resizedPoint(
-              firma.coordenaday2,
-              "Y",
-              canvas.width,
-              canvas.height,
-              page.view[2],
-              page.view[3]
-            );
-            firma.coordenada_x1 = resizedPoint(
-              firma.coordenada_x1,
-              "X",
-              canvas.width,
-              canvas.height,
-              page.view[2],
-              page.view[3]
-            );
-            firma.coordenada_x2 = resizedPoint(
-              firma.coordenada_x2,
-              "X",
-              canvas.width,
-              canvas.height,
-              page.view[2],
-              page.view[3]
-            );
-            firma.coordenada_y1 = resizedPoint(
-              firma.coordenada_y1,
-              "Y",
-              canvas.width,
-              canvas.height,
-              page.view[2],
-              page.view[3]
-            );
-            firma.coordenada_y2 = resizedPoint(
-              firma.coordenada_y2,
-              "Y",
-              canvas.width,
-              canvas.height,
-              page.view[2],
-              page.view[3]
-            );
-          }
-        });
-      });
-      if (i + 1 === pdfInstance.numPages) {
-        callback();
-      }
-    }
   }
 
   // Signature Canvas
@@ -352,44 +336,6 @@
     const existingPdfBytes = await fetch(url).then((res) => res.arrayBuffer());
     const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
     const pages = pdfDoc.getPages();
-    const firstPage = pages[0];
-    // Get the width and height of the first page
-    const { width, height } = firstPage.getSize();
-
-    // Get the width/height of the PNG image scaled down to 50% of its original size
-
-    // saco porcentaje de las coordenadas respecto al canvas
-    // const { percentageX, percentageY } = coordinatesToPercent(
-    //   leftPosition,
-    //   topPosition,
-    //   PdfCanvas.width,
-    //   PdfCanvas.height
-    // );
-    // saco coordenadas desde los porcentajes con las medidas del PDF original
-    // const { x, y } = percentToCoordinates(
-    //   percentageX,
-    //   percentageY,
-    //   width,
-    //   height
-    // );
-    // saco proporciones de la imagen respecto del pdf original en base a su medida encima del canvas
-    // const imgWidhtProportionInPdf = resizedPoint(
-    //   imgSignWidth,
-    //   "X",
-    //   PdfCanvas.width,
-    //   PdfCanvas.height,
-    //   width,
-    //   height
-    // );
-    // const imgHeightProportionInPdf = resizedPoint(
-    //   imgSignHeight,
-    //   "Y",
-    //   PdfCanvas.width,
-    //   PdfCanvas.height,
-    //   width,
-    //   height
-    // );
-    let hasAllSignatures = false;
     for (let index = 0; index < pages.length; index++) {
       let currentPage = pages[index];
       // const { width, height } = page.getSize();
@@ -407,8 +353,6 @@
           );
           // Draw the PNG image on the page
           currentPage.drawImage(pngImage, {
-            // x: x - middleImgWidth,
-            // y: height - y - middleImgHeigh, //pdf-lib da la posicion desde abajo del documento por eso le resto al alto total la coordenada
             x: arrayFirmasPDF[j].coordenada_x1,
             y: arrayFirmasPDF[j].coordenada_y2,
             width:
@@ -419,10 +363,6 @@
         }
       }
     }
-    // la posicion de la firma en canvas varia a como la acomoda en el PDF, encontre que mas o menos estas proporciones son las que varian
-    // const middleImgHeigh = imgHeightProportionInPdf / 2;
-    // const middleImgWidth = imgWidhtProportionInPdf / 8;
-
     // Serialize the PDFDocument to bytes (a Uint8Array)
     const pdfBytes = await pdfDoc.save();
 
@@ -451,12 +391,14 @@
     pdfWidth,
     pdfHeight
   ) {
-    const proportionX = widthWeb / pdfWidth;
-    const proportionY = heightWeb / pdfHeight;
+    const proportionX = parseFloat(widthWeb / pdfWidth).toFixed(2);
+    const proportionY = parseFloat(heightWeb / pdfHeight).toFixed(2);
+    const fixedProportionX = Math.ceil(proportionX * 100) / 100;
+    const fixedProportionY = Math.ceil(proportionY * 100) / 100;
     if (valueCode === "X") {
-      return value * proportionX;
+      return (value * fixedProportionX).toFixed(2);
     } else if (valueCode === "Y") {
-      return value * proportionY;
+      return (value * fixedProportionY).toFixed(2);
     }
     return value;
   }
