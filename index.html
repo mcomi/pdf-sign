@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"
+      integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="css/bootstrap.min.css" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://unpkg.com/pdf-lib"></script>
+    <script src="https://unpkg.com/downloadjs@1.4.7"></script>
+    <title>Firma en línea</title>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-6 col-12 mx-auto p-0">
+          <div role="toolbar" id="toolbar" class="toolbar">
+            <div id="pager">
+              <button data-pager="prev">prev</button>
+              <button data-pager="next">next</button>
+            </div>
+            <div id="page-mode">
+              <label>Page Mode <input type="number" value="1" min="1" /></label>
+            </div>
+          </div>
+          <div id="viewport-container">
+            <div id="signature-layer" class="signatures-layer"></div>
+            <div role="main" id="viewport"></div>
+          </div>
+        </div>
+        <div id="download-btn-section"></div>
+      </div>
+    </div>
+    <div id="myModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+          <div id="signature-pad" class="signature-pad">
+            <div class="signature-pad--body">
+              <canvas
+                id="canvas-signature"
+                width="1328"
+                height="752"
+                style="touch-action: none;"
+              ></canvas>
+            </div>
+            <div class="signature-pad--footer">
+              <div class="description">Firma arriba</div>
+
+              <div class="signature-pad--actions">
+                <button
+                  type="button"
+                  class="btn btn-default btn-sm"
+                  data-action="clear"
+                >
+                  Limpiar todo
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-default btn-sm"
+                  data-action="undo"
+                >
+                  Undo
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-default btn-sm"
+                  data-action="save-svg"
+                >
+                  Aplicar firma
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="https://unpkg.com/pdfjs-dist@2.0.489/build/pdf.min.js"></script>
+    <script src="https://szimek.github.io/signature_pad/js/signature_pad.umd.js"></script>
+    <script src="app.js"></script>
+    <script>
+      initPDFViewer("PRELLENADO.pdf");
+    </script>
+  </body>
+</html>
