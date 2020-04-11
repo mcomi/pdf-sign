@@ -7,10 +7,10 @@
   let arrayFirmasCanvas = []; // aqui meto las firmas y coordenadas del excel
   let arrayFirmasPDF = [];
 
+  getCoordenadasFirmas();
   const viewport = document.querySelector("#viewport");
   window.initPDFViewer = function (pdfURL) {
     pdfjsLib.getDocument(pdfURL).then((pdf) => {
-      getCoordenadasFirmas();
       pdfInstance = pdf;
       totalPagesCount = pdf.numPages;
       initPager();
@@ -20,7 +20,7 @@
   };
 
   function getCoordenadasFirmas() {
-    return fetch("./coordenadasFirmas.json")
+    fetch("./coordenadasFirmas.json")
       .then((res) => res.json())
       .then((data) => {
         // hago un deep copy del arreglo original para que no se modifique cuando cambie el del canvas
