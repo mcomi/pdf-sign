@@ -9,8 +9,8 @@
 
   const viewport = document.querySelector("#viewport");
   window.initPDFViewer = function (pdfURL) {
-    getCoordenadasFirmas();
     pdfjsLib.getDocument(pdfURL).then((pdf) => {
+      getCoordenadasFirmas();
       pdfInstance = pdf;
       totalPagesCount = pdf.numPages;
       initPager();
@@ -20,11 +20,12 @@
   };
 
   function getCoordenadasFirmas() {
-    fetch("./coordenadasFirmas.json")
+    return fetch("./coordenadasFirmas.json")
       .then((res) => res.json())
       .then((data) => {
+        // hago un deep copy del arreglo original para que no se modifique cuando cambie el del canvas
+        arrayFirmasPDF = JSON.parse(JSON.stringify(data.Firmas));
         arrayFirmasCanvas = data.Firmas;
-        arrayFirmasPDF = data.Firmas;
       })
       .catch((err) => console.error(err));
   }
@@ -97,7 +98,7 @@
     });
   }
 
-  let signatureId = 0;
+  let signatureId;
   function showModal(id) {
     signatureId = id;
     const modal = document.getElementById("myModal");
@@ -137,10 +138,8 @@
     const filterSignaturesForPage = arrayFirmasCanvas.filter((firma) => {
       return page.pageIndex + 1 === Number(firma.numeroPagina);
     });
-    console.log(canvas.width, canvas.height, page.view[2], page.view[3]);
     for (var i = 0; i < filterSignaturesForPage.length; i++) {
       if (!filterSignaturesForPage[i].resized) {
-        console.log("antes:" + filterSignaturesForPage[i].coordenadax1);
         filterSignaturesForPage[i].coordenadax1 = resizedPoint(
           filterSignaturesForPage[i].coordenadax1,
           "X",
@@ -149,8 +148,6 @@
           page.view[2],
           page.view[3]
         );
-        console.log("despues:" + filterSignaturesForPage[i].coordenadax1);
-        console.log("--------------------------------");
         filterSignaturesForPage[i].coordenadax2 = resizedPoint(
           filterSignaturesForPage[i].coordenadax2,
           "X",
@@ -247,6 +244,8 @@
   const canvas = wrapper.querySelector("canvas");
   const signaturePad = new SignaturePad(canvas, {
     backgroundColor: "transparent",
+    minWidth: 1,
+    maxWidth: 3,
   });
 
   function resizeCanvas() {
@@ -284,6 +283,13 @@
       );
       //const dataURL = signaturePad.toDataURL("image/svg+xml");
       savedSignature = signaturePad.toDataURL("image/png");
+      console.log(savedSignature);
+      savedSignatureResized = signaturePad.toDataURL("image/png", {
+        height:
+          arrayFirmasCanvas[indexSignature].coordenaday2 -
+          arrayFirmasCanvas[indexSignature].coordenada_y2,
+      }); // cambiando el tamaño
+      console.log(savedSignatureResized);
       const signatureLayer = document.querySelector("#viewport").firstChild;
       const signatureDiv = document.createElement("div");
       signatureDiv.classList.add("signature");
@@ -293,23 +299,23 @@
         arrayFirmasCanvas[indexSignature].coordenada_y1 + "px";
       signatureLayer.appendChild(signatureDiv);
       const image = document.createElement("img");
-      image.setAttribute(
-        "width",
-        arrayFirmasCanvas[indexSignature].coordenadax2 -
-          arrayFirmasCanvas[indexSignature].coordenadax1 +
-          "px"
-      );
+      image.setAttribute("width", "auto");
       image.setAttribute(
         "height",
         arrayFirmasCanvas[indexSignature].coordenaday2 -
           arrayFirmasCanvas[indexSignature].coordenada_y2 +
           "px"
       );
-      image.setAttribute("src", savedSignature);
+      image.setAttribute("src", savedSignatureResized);
       signatureDiv.appendChild(image);
+      // agrego propiedades a mi arreglo de firmas de canvas
       arrayFirmasCanvas[indexSignature].firmado = true;
       arrayFirmasCanvas[indexSignature].firma = signatureDiv.outerHTML;
-      arrayFirmasCanvas[indexSignature].firmaParaPDF = savedSignature;
+
+      // agrego propiedades para mi arreglo de firmas para PDF
+      arrayFirmasPDF[indexSignature].firmado = true;
+      arrayFirmasPDF[indexSignature].firmaParaPDF = savedSignature;
+      console.log(arrayFirmasPDF[indexSignature]);
       render();
       closeModal();
       btnDownloadHTML = `<button class="btn-btn-primary" id="btn-download">Descarga contrato<button>`;
@@ -319,19 +325,19 @@
       document
         .getElementById("btn-download")
         .addEventListener("click", function () {
-          modifyPdfWithSignatureAndDownload(leftPosition, topPosition);
+          modifyPdfWithSignatureAndDownload();
         });
     }
   });
 
-  async function modifyPdfWithSignatureAndDownload(leftPosition, topPosition) {
+  async function modifyPdfWithSignatureAndDownload() {
     const totalSignatures = arrayFirmasCanvas.filter((firma) => {
       return firma.firmado === true;
     });
-    if (totalSignatures.length !== arrayFirmasPDF.length) {
-      alert("Faltan firmaas");
-      return;
-    }
+    // if (totalSignatures.length !== arrayFirmasPDF.length) {
+    //   alert("Faltan firmaas");
+    //   return;
+    // }
     const url = "PRELLENADO.pdf";
     const existingPdfBytes = await fetch(url).then((res) => res.arrayBuffer());
     const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
@@ -345,20 +351,25 @@
           index + 1 === Number(arrayFirmasPDF[j].numeroPagina) &&
           arrayFirmasPDF[j].firmado
         ) {
-          console.log(`imprimo firma en página ${index + 1}`);
           countSignatures++;
           // Embed the PNG image bytes and PNG image bytes
           const pngImage = await pdfDoc.embedPng(
             arrayFirmasPDF[j].firmaParaPDF
           );
           // Draw the PNG image on the page
+          const x = Number(arrayFirmasPDF[j].coordenada_x1);
+          const y = Number(arrayFirmasPDF[j].coordenada_y2);
+          const width = Number(
+            arrayFirmasPDF[j].coordenada_x2 - arrayFirmasPDF[j].coordenada_x1
+          );
+          const height = Number(
+            arrayFirmasPDF[j].coordenaday2 - arrayFirmasPDF[j].coordenada_y2
+          );
           currentPage.drawImage(pngImage, {
-            x: arrayFirmasPDF[j].coordenada_x1,
-            y: arrayFirmasPDF[j].coordenada_y2,
-            width:
-              arrayFirmasPDF[j].coordenada_x2 - arrayFirmasPDF[j].coordenada_x1,
-            height:
-              arrayFirmasPDF[j].coordenaday2 - arrayFirmasPDF[j].coordenada_y2,
+            x: x,
+            y: y,
+            width: width,
+            height: height,
           });
         }
       }
@@ -368,18 +379,6 @@
 
     // Trigger the browser to download the PDF document
     download(pdfBytes, "contrato-firmado.pdf", "application/pdf");
-  }
-
-  function coordinatesToPercent(valueX, valueY, width, height) {
-    const percentageX = (100 * valueX) / width;
-    const percentageY = (100 * valueY) / height;
-    return { percentageX, percentageY };
-  }
-
-  function percentToCoordinates(percentageX, percentageY, width, height) {
-    const x = (percentageX * width) / 100;
-    const y = (percentageY * height) / 100;
-    return { x, y };
   }
 
   // calcula proporciones, da los mismo valores que calculando porcentajes, la deje y la ocupe para las proporciones de la imagen de la firma
